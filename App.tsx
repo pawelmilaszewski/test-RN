@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useMemo, useState, FC} from 'react';
+import React, {useMemo, FC, useEffect} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -7,56 +7,27 @@ import {
   View,
   TouchableOpacity,
 } from 'react-native';
+import {useSelector, useDispatch, Provider} from 'react-redux';
+import {ITree, increment, addNode} from './redux/reducer';
+import {RootState, store} from './redux/store';
 
 const App = () => {
   return (
     <SafeAreaView style={styles.main}>
-      <Main />
+      <Provider store={store}>
+        <Main />
+      </Provider>
     </SafeAreaView>
   );
 };
 
-interface ITree {
-  [key: string]: INode;
-}
-interface INode {
-  id: string;
-  counter: number;
-  kids: string[];
-}
-
-const rootNode: INode = {
-  id: '0',
-  counter: 0,
-  kids: [],
-};
-
-let counterN = 0;
-
 type TNode = {
   id: string;
   tree: ITree;
-  setTree: (value: ITree) => void;
 };
 
-const Node: FC<TNode> = ({id, tree, setTree}) => {
-  const addNode = () => {
-    counterN++;
-    let xxx = {
-      ...tree,
-      [counterN.toString()]: {id: counterN.toString(), counter: 0, kids: []},
-    };
-    let yyy = xxx[id].kids;
-    xxx[id].kids = [...yyy, counterN.toString()];
-    setTree({...xxx});
-    console.log('tree: ', tree);
-  };
-
-  const increment = () => {
-    let xxx = tree;
-    xxx[id].counter++;
-    setTree({...xxx});
-  };
+const Node: FC<TNode> = ({id, tree}) => {
+  const dispatch = useDispatch();
 
   return (
     <View style={{marginLeft: 20}} key={id}>
@@ -77,7 +48,7 @@ const Node: FC<TNode> = ({id, tree, setTree}) => {
             alignItems: 'center',
             marginLeft: 12,
           }}
-          onPress={() => addNode()}>
+          onPress={() => dispatch(addNode(id))}>
           <Text style={{fontSize: 12, color: 'blue'}}>Add node</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -86,26 +57,24 @@ const Node: FC<TNode> = ({id, tree, setTree}) => {
             justifyContent: 'center',
             alignItems: 'center',
           }}
-          onPress={() => increment()}>
+          onPress={() => dispatch(increment(id))}>
           <Text style={{fontSize: 12, color: 'blue'}}>Increment</Text>
         </TouchableOpacity>
       </View>
       {tree[id].kids.map((uid: string) => (
-        <Node id={uid} tree={tree} setTree={setTree} key={uid} />
+        <Node id={uid} tree={tree} key={uid} />
       ))}
     </View>
   );
 };
 
 const Main = () => {
-  const [tree, setTree] = useState<ITree>({
-    ['0']: rootNode,
-  });
+  const tree = useSelector((state: RootState) => state.tree);
+  useEffect(() => {
+    console.log('tree: ', tree);
+  }, [tree]);
 
-  const renderNode = useMemo(
-    () => <Node id={'0'} setTree={setTree} tree={tree} />,
-    [tree, setTree],
-  );
+  const renderNode = useMemo(() => <Node id={'0'} tree={tree} />, [tree]);
 
   return <View style={{padding: 20, flex: 1}}>{renderNode}</View>;
 };

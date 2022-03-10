@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useEffect, useCallback} from 'react';
+import React, {useMemo, useState, FC} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -7,8 +7,6 @@ import {
   View,
   TouchableOpacity,
 } from 'react-native';
-
-let nodesCounter = 0;
 
 const App = () => {
   return (
@@ -18,130 +16,98 @@ const App = () => {
   );
 };
 
-type NodeType = {
-  id: number;
+interface ITree {
+  [key: string]: INode;
+}
+interface INode {
+  id: string;
   counter: number;
-  children: NodeType[];
-};
-
-class Node {
-  counter: number;
-  id: number;
-  children: NodeType[];
-
-  constructor(c: number) {
-    this.children = [];
-    this.counter = 0;
-    this.id = c;
-  }
-  increment() {
-    this.counter++;
-  }
-  addNode() {
-    nodesCounter++;
-    const temp = new Node(nodesCounter);
-    this.children.push(temp);
-  }
+  kids: string[];
 }
 
-const Main = () => {
-  const nodes = [] as NodeType[];
+const rootNode: INode = {
+  id: '0',
+  counter: 0,
+  kids: [],
+};
 
-  const a = new Node(nodesCounter);
-  nodesCounter++;
-  const b = new Node(nodesCounter);
-  nodesCounter++;
-  const c = new Node(nodesCounter);
-  nodesCounter++;
-  const d = new Node(nodesCounter);
-  nodesCounter++;
-  const e = new Node(nodesCounter);
+let counterN = 0;
 
-  nodes.push(a);
+type TNode = {
+  id: string;
+  tree: ITree;
+  setTree: (value: ITree) => void;
+};
 
-  a.children.push(b);
-  a.children.push(c);
-  b.children.push(d);
-  b.children.push(e);
-
-  useEffect(() => {
-    console.log('node: ', nodes);
-  }, [nodes]);
-
-  useEffect(() => {
-    console.log('a: ', a);
-  }, [a]);
-
-  const addNode = (node: any) => {
-    node.addNode();
-    console.log('after add node: ', node);
+const Node: FC<TNode> = ({id, tree, setTree}) => {
+  const addNode = () => {
+    counterN++;
+    let xxx = {
+      ...tree,
+      [counterN.toString()]: {id: counterN.toString(), counter: 0, kids: []},
+    };
+    let yyy = xxx[id].kids;
+    xxx[id].kids = [...yyy, counterN.toString()];
+    setTree({...xxx});
+    console.log('tree: ', tree);
   };
 
-  const increment = (node: any) => {
-    node.increment();
-    console.log('after increment node: ', node);
-  };
-
-  const addNodeToMain = () => {
-    let temp = new Node(nodesCounter);
-    return nodes.push(temp);
-  };
-
-  const renderNodes = (values: NodeType[]) => {
-    return values.map((item: NodeType) => {
-      return (
-        <View style={{marginLeft: 20}}>
-          <View
-            style={{
-              flexDirection: 'row',
-              padding: 8,
-              alignItems: 'center',
-            }}>
-            <View>
-              <Text>ID: {item.id}</Text>
-              <Text>Counter: {item.counter}</Text>
-            </View>
-            <TouchableOpacity
-              style={{
-                padding: 8,
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginLeft: 12,
-              }}
-              onPress={() => addNode(item)}>
-              <Text style={{fontSize: 12, color: 'blue'}}>Add node</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                padding: 8,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              onPress={() => increment(item)}>
-              <Text style={{fontSize: 12, color: 'blue'}}>Increment</Text>
-            </TouchableOpacity>
-          </View>
-          {renderNodes(item.children)}
-        </View>
-      );
-    });
+  const increment = () => {
+    let xxx = tree;
+    xxx[id].counter++;
+    setTree({...xxx});
   };
 
   return (
-    <View style={{padding: 20, flex: 1}}>
-      <Text>Hello</Text>
-      <TouchableOpacity
+    <View style={{marginLeft: 20}} key={id}>
+      <View
         style={{
+          flexDirection: 'row',
           padding: 8,
-          justifyContent: 'center',
           alignItems: 'center',
-        }}
-        onPress={addNodeToMain}>
-        <Text style={{fontSize: 12, color: 'blue'}}>Add node</Text>
-      </TouchableOpacity>
-      {renderNodes(nodes)}
+        }}>
+        <View>
+          <Text>ID: {id}</Text>
+          <Text>Counter: {tree[id].counter}</Text>
+        </View>
+        <TouchableOpacity
+          style={{
+            padding: 8,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginLeft: 12,
+          }}
+          onPress={() => addNode()}>
+          <Text style={{fontSize: 12, color: 'blue'}}>Add node</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            padding: 8,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onPress={() => increment()}>
+          <Text style={{fontSize: 12, color: 'blue'}}>Increment</Text>
+        </TouchableOpacity>
+      </View>
+      {tree[id].kids.map((uid: string) => (
+        <Node id={uid} tree={tree} setTree={setTree} key={uid} />
+      ))}
     </View>
   );
+};
+
+const Main = () => {
+  const [tree, setTree] = useState<ITree>({
+    ['0']: rootNode,
+  });
+
+  const renderNode = useMemo(
+    () => <Node id={'0'} setTree={setTree} tree={tree} />,
+    [tree, setTree],
+  );
+
+  return <View style={{padding: 20, flex: 1}}>{renderNode}</View>;
 };
 
 const styles = StyleSheet.create({

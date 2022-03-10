@@ -31,7 +31,10 @@ const initialState = {
   },
 };
 
-export default (state = initialState, action: any): State => {
+export default (
+  state = initialState,
+  action: {type: Action; payload: string},
+): State => {
   switch (action.type) {
     case Action.INCREMENT: {
       let temp = {...state.tree};
